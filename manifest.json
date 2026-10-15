@@ -3,6 +3,7 @@
   "dir": "ltr",
   "display": "standalone",
   "name": "mapagym",
+  "description": "Mapa en tiempo real para el equipo",
   "orientation": "any",
   "scope": "/",
   "short_name": "MapaGym",
