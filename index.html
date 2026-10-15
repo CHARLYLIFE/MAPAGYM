@@ -114,7 +114,15 @@
           if (marcadores[amigoKey]) {
             marcadores[amigoKey].setLatLng(coords);
           } else {
-            marcadores[amigoKey] = L.marker(coords).addTo(map).bindPopup(`<b>${nombreBonito}</b>`).openPopup();
+            // Círculo brillante para visualizar el punto al instante en el mapa
+            marcadores[amigoKey] = L.circleMarker(coords, {
+              radius: 10,
+              fillColor: amigoKey === usuarioActual ? "#00ffcc" : "#ff0055",
+              color: "#fff",
+              weight: 2,
+              opacity: 1,
+              fillOpacity: 0.8
+            }).addTo(map).bindPopup(`<b>${nombreBonito}</b>`).openPopup();
           }
         }
       });
