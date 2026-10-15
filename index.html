@@ -73,26 +73,36 @@
     let marcadores = {};
 
     // Obtener ubicación GPS en tiempo real y enviarla a Firebase
-    if ("geolocation" in navigator) {
-      navigator.geolocation.watchPosition(
+if ("geolocation" in navigator) {
+    navigator.geolocation.watchPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
 
-          document.getElementById('status').innerText = `GPS Activo ✅ (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
+            document.getElementById('status').innerText = `GPS Activo 🟩 (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
 
-          // Subir las coordenadas a la base de datos bajo tu nombre
-          db.ref('ubicaciones_grupo/' + usuarioActual).set({
-            lat: lat,
-            lng: lng,
-            timestamp: Date.now()
-          });
+            // Centrar el mapa en tu posición exacta y mover tu marcador
+            map.setView([lat, lng], 16);
+            if (window.miPosicionMarcador) {
+                window.miPosicionMarcador.setLatLng([lat, lng]);
+            } else {
+                window.miPosicionMarcador = L.marker([lat, lng]).addTo(map).bindPopup("¡Estás aquí!").openPopup();
+            }
+
+            // Subir las coordenadas a la base de datos bajo tu nombre
+            db.ref('ubicaciones_grupo/' + usuarioActual).set({
+                lat: lat,
+                lng: lng,
+                timestamp: Date.now()
+            });
         },
         (err) => {
-          document.getElementById('status').innerText = "Error de GPS: " + err.message;
+            document.getElementById('status').innerText = "Error de GPS: " + err.message;
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-      );
+    );
+}
+
     } else {
       document.getElementById('status').innerText = "Tu navegador no soporta geolocalización.";
     }
