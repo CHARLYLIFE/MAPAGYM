@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa del Combo - En Vivo</title>
+  <!-- Estilos de Leaflet (Mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { font-family: sans-serif; text-align: center; margin: 0; padding: 10px; background: #121212; color: #fff; }
+    #map { height: 450px; width: 100%; border-radius: 12px; margin-top: 15px; }
+    .controls { margin-top: 10px; background: #1e1e1e; padding: 10px; border-radius: 8px; }
+    select, button { padding: 10px; font-size: 16px; border-radius: 6px; border: none; margin-top: 5px; }
+    select { background: #333; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <h2>📍 El Radar del Combo</h2>
+  
+  <div class="controls">
+    <label for="usuarioSelect"><strong>¿Quién eres?:</strong></label><br>
+    <select id="usuarioSelect" onchange="cambiarUsuario()">
+      <option value="carlos">Carlos</option>
+      <option value="victor">Víctor</option>
+      <option value="ernesto">Ernesto</option>
+      <option value="mai">Mai</option>
+      <option value="kirito">Kirito</option>
+      <option value="yonatan">Yonatan</option>
+    </select>
+  </div>
+  
+  <div id="status" style="margin-top: 10px; font-size: 14px; color: #aaa;">Conectando al GPS...</div>
+  <div id="map"></div>
+
+  <!-- Firebase SDKs (Versión Compat para base de datos) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // --- TUS CREDENCIALES REALES DE FIREBASE ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcMJ6fxdf43ZjXjtzcG4z_vUImlT4uSVs",
+      authDomain: "mapagym-f769b.firebaseapp.com",
+      databaseURL: "https://mapagym-f769b-default-rtdb.firebaseio.com",
+      projectId: "mapagym-f769b",
+      storageBucket: "mapagym-f769b.firebasestorage.app",
+      messagingSenderId: "633920044007",
+      appId: "1:633920044007:web:cb2450520fd425fadd5b42",
+      measurementId: "G-0HKGBDYHQR"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let usuarioActual = document.getElementById('usuarioSelect').value;
+
+    function cambiarUsuario() {
+      usuarioActual = document.getElementById('usuarioSelect').value;
+      alert("Ahora estás transmitiendo como: " + usuarioActual.toUpperCase());
+    }
+
+    // Inicializar Mapa centrado en Camagüey
+    const map = L.map('map').setView([21.38, -77.91], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    let marcadores = {};
+
+    // Obtener ubicación GPS en tiempo real y enviarla a Firebase
+    if ("geolocation" in navigator) {
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          document.getElementById('status').innerText = `GPS Activo ✅ (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
+
+          // Subir las coordenadas a la base de datos bajo tu nombre
+          db.ref('ubicaciones_grupo/' + usuarioActual).set({
+            lat: lat,
+            lng: lng,
+            timestamp: Date.now()
+          });
+        },
+        (err) => {
+          document.getElementById('status').innerText = "Error de GPS: " + err.message;
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+    } else {
+      document.getElementById('status').innerText = "Tu navegador no soporta geolocalización.";
+    }
+
+    // Escuchar en tiempo real los cambios de TODO el grupo
+    db.ref('ubicaciones_grupo').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      Object.keys(data).forEach((amigoKey) => {
+        const info = data[amigoKey];
+        const coords = [info.lat, info.lng];
+        const nombreBonito = amigoKey.charAt(0).toUpperCase() + amigoKey.slice(1);
+
+        if (marcadores[amigoKey]) {
+          marcadores[amigoKey].setLatLng(coords);
+        } else {
+          marcadores[amigoKey] = L.marker(coords).addTo(map).bindPopup(`<b>${nombreBonito}</b>`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
