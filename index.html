@@ -43,7 +43,7 @@
   <script>
     // --- TUS CREDENCIALES REALES DE FIREBASE ---
     const firebaseConfig = {
-      apiKey: "AIzaSyCcMJ6fxdf43ZjXjtzcG4z_vUImlT4uSVs",
+      apiKey: "AIzaSyCcMJ6fXdf43ZjXjtzcG4z_vUInlT4uSVs",
       authDomain: "mapagym-f769b.firebaseapp.com",
       databaseURL: "https://mapagym-f769b-default-rtdb.firebaseio.com",
       projectId: "mapagym-f769b",
@@ -72,65 +72,62 @@
 
     let marcadores = {};
 
-    // Obtener ubicación GPS en tiempo real y enviarla a Firebase
-if ("geolocation" in navigator) {
-    navigator.geolocation.watchPosition(
+    // Obtener ubicación GPS en tiempo real
+    if ("geolocation" in navigator) {
+      navigator.geolocation.watchPosition(
         (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
 
-            document.getElementById('status').innerText = `GPS Activo 🟩 (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
+          document.getElementById('status').innerText = `GPS Activo 🟩 (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
 
-            // Centrar el mapa en tu posición exacta y mover tu marcador
-            map.setView([lat, lng], 16);
-            if (window.miPosicionMarcador) {
-                window.miPosicionMarcador.setLatLng([lat, lng]);
-            } else {
-                window.miPosicionMarcador = L.marker([lat, lng]).addTo(map).bindPopup("¡Estás aquí!").openPopup();
-            }
+          // Centrar siempre la cámara en tus coordenadas exactas
+          map.setView([lat, lng], 16);
 
-            // Subir las coordenadas a la base de datos bajo tu nombre
-            db.ref('ubicaciones_grupo/' + usuarioActual).set({
-                lat: lat,
-                lng: lng,
-                timestamp: Date.now()
-            });
+          // Subir coordenadas a Firebase
+          db.ref('ubicaciones_grupo/' + usuarioActual).set({
+            lat: lat,
+            lng: lng,
+            timestamp: Date.now()
+          });
         },
         (err) => {
-            document.getElementById('status').innerText = "Error de GPS: " + err.message;
+          document.getElementById('status').innerText = "Error de GPS: " + err.message;
         },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-    );
-}
-
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+      );
     } else {
       document.getElementById('status').innerText = "Tu navegador no soporta geolocalización.";
     }
 
-    // Escuchar en tiempo real los cambios de TODO el grupo
+    // Escuchar en tiempo real a TODOS los usuarios en Firebase y pintarlos en el mapa
     db.ref('ubicaciones_grupo').on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
 
       Object.keys(data).forEach((amigoKey) => {
         const info = data[amigoKey];
-        const coords = [info.lat, info.lng];
-        const nombreBonito = amigoKey.charAt(0).toUpperCase() + amigoKey.slice(1);
+        if (info && info.lat && info.lng) {
+          const coords = [info.lat, info.lng];
+          const nombreBonito = amigoKey.charAt(0).toUpperCase() + amigoKey.slice(1);
 
-        if (marcadores[amigoKey]) {
-          marcadores[amigoKey].setLatLng(coords);
-        } else {
-          marcadores[amigoKey] = L.marker(coords).addTo(map).bindPopup(`<b>${nombreBonito}</b>`);
+          if (marcadores[amigoKey]) {
+            marcadores[amigoKey].setLatLng(coords);
+          } else {
+            marcadores[amigoKey] = L.marker(coords).addTo(map).bindPopup(`<b>${nombreBonito}</b>`).openPopup();
+          }
         }
       });
     });
   </script>
+
+  <!-- Registro del Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker listo'))
+        .catch((err) => console.log('Error SW:', err));
+    }
+  </script>
 </body>
 </html>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker listo'))
-      .catch((err) => console.log('Error SW:', err));
-  }
-</script>
