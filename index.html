@@ -72,7 +72,7 @@
 
     let marcadores = {};
 
-    // Obtener ubicación GPS en tiempo real
+    // Obtener ubicación GPS en tiempo real y pintar marcador local inmediato
     if ("geolocation" in navigator) {
       navigator.geolocation.watchPosition(
         (pos) => {
@@ -81,8 +81,25 @@
 
           document.getElementById('status').innerText = `GPS Activo 🟩 (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
 
-          // Centrar siempre la cámara en tus coordenadas exactas
-          map.setView([lat, lng], 16);
+          // Centrar el mapa en tu posición exacta
+          map.setView([lat, lng], 17);
+
+          const coords = [lat, lng];
+          const nombreBonito = usuarioActual.charAt(0).toUpperCase() + usuarioActual.slice(1);
+
+          // Pintar o mover tu propio marcador al instante
+          if (marcadores[usuarioActual]) {
+            marcadores[usuarioActual].setLatLng(coords);
+          } else {
+            marcadores[usuarioActual] = L.circleMarker(coords, {
+              radius: 12,
+              fillColor: "#00ffcc",
+              color: "#fff",
+              weight: 3,
+              opacity: 1,
+              fillOpacity: 0.9
+            }).addTo(map).bindPopup(`<b>${nombreBonito} (Tú)</b>`).openPopup();
+          }
 
           // Subir coordenadas a Firebase
           db.ref('ubicaciones_grupo/' + usuarioActual).set({
@@ -100,12 +117,14 @@
       document.getElementById('status').innerText = "Tu navegador no soporta geolocalización.";
     }
 
-    // Escuchar en tiempo real a TODOS los usuarios en Firebase y pintarlos en el mapa
+    // Escuchar en tiempo real al RESTO del grupo en Firebase
     db.ref('ubicaciones_grupo').on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
 
       Object.keys(data).forEach((amigoKey) => {
+        if (amigoKey === usuarioActual) return; // Ya manejamos el nuestro arriba
+
         const info = data[amigoKey];
         if (info && info.lat && info.lng) {
           const coords = [info.lat, info.lng];
@@ -114,15 +133,14 @@
           if (marcadores[amigoKey]) {
             marcadores[amigoKey].setLatLng(coords);
           } else {
-            // Círculo brillante para visualizar el punto al instante en el mapa
             marcadores[amigoKey] = L.circleMarker(coords, {
               radius: 10,
-              fillColor: amigoKey === usuarioActual ? "#00ffcc" : "#ff0055",
+              fillColor: "#ff0055",
               color: "#fff",
               weight: 2,
               opacity: 1,
               fillOpacity: 0.8
-            }).addTo(map).bindPopup(`<b>${nombreBonito}</b>`).openPopup();
+            }).addTo(map).bindPopup(`<b>${nombreBonito}</b>`);
           }
         }
       });
