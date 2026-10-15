@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "mapagym",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "MapaGym",
+  "start_url": "/",
+  "theme_color": "#ffffff"
+}
