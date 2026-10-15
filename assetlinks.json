@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.charlylife.twa",
+        "sha256_cert_fingerprints": ["1D:93:AF:8F:B5:9A:0D:91:12:FF:5F:42:E5:0B:E4:FA:35:16:C0:34:80:C7:B2:0B:5B:9E:01:DC:D4:71:0A:37"]
+      }
+    }]
